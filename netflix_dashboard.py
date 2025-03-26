@@ -395,4 +395,94 @@ fig_density.update_layout(
     showlegend=True,
     legend_title="Content Type"
 )
-st.plotly_chart(fig_density, use_container_width=True) 
+st.plotly_chart(fig_density, use_container_width=True)
+
+# Add Rating Analysis Section
+st.header("Rating Analysis")
+col12, col13 = st.columns(2)
+
+with col12:
+    # Create stacked bar chart for ratings by content type
+    rating_by_type = filtered_df.groupby(['rating', 'type']).size().reset_index(name='count')
+    
+    # Sort ratings in a logical order
+    rating_order = ['G', 'PG', 'PG-13', 'TV-14', 'TV-MA', 'R', 'NC-17', 'Not rated']
+    rating_by_type['rating'] = pd.Categorical(
+        rating_by_type['rating'],
+        categories=rating_order,
+        ordered=True
+    )
+    
+    # Create stacked bar chart
+    fig_rating = px.bar(
+        rating_by_type,
+        x='rating',
+        y='count',
+        color='type',
+        title="Rating Distribution by Content Type",
+        labels={
+            'rating': 'Content Rating',
+            'count': 'Number of Titles',
+            'type': 'Content Type'
+        },
+        barmode='stack'
+    )
+    
+    # Update layout
+    fig_rating.update_layout(
+        xaxis_title="Content Rating",
+        yaxis_title="Number of Titles",
+        legend_title="Content Type",
+        showlegend=True,
+        xaxis_tickangle=-45
+    )
+    
+    st.plotly_chart(fig_rating, use_container_width=True)
+
+with col13:
+    # Create pie chart for overall rating distribution
+    rating_counts = filtered_df['rating'].value_counts()
+    
+    # Create pie chart
+    fig_pie = px.pie(
+        values=rating_counts.values,
+        names=rating_counts.index,
+        title="Overall Rating Distribution",
+        labels={
+            'names': 'Rating',
+            'values': 'Number of Titles'
+        }
+    )
+    
+    # Update layout
+    fig_pie.update_layout(
+        showlegend=True,
+        legend_title="Content Rating"
+    )
+    
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+# Add rating statistics
+st.subheader("Rating Statistics")
+col14, col15, col16 = st.columns(3)
+
+with col14:
+    # Calculate percentage of TV-MA content
+    tv_ma_content = filtered_df[filtered_df['rating'] == 'TV-MA'].shape[0]
+    total_content = filtered_df.shape[0]
+    tv_ma_percentage = (tv_ma_content / total_content) * 100
+    st.metric("TV-MA Content", f"{tv_ma_percentage:.1f}%")
+
+with col15:
+    # Calculate percentage of PG-13 content
+    pg13_content = filtered_df[filtered_df['rating'] == 'PG-13'].shape[0]
+    pg13_percentage = (pg13_content / total_content) * 100
+    st.metric("PG-13 Content", f"{pg13_percentage:.1f}%")
+
+with col16:
+    # Calculate percentage of family-friendly content (G, PG, TV-G)
+    family_content = filtered_df[
+        filtered_df['rating'].isin(['G', 'PG', 'TV-G'])
+    ].shape[0]
+    family_percentage = (family_content / total_content) * 100
+    st.metric("Family-Friendly Content", f"{family_percentage:.1f}%") 
